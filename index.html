@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smack Magick — A Philosophy of Jellyfish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* iridescent palette */
+    --sky-top:#ffe4f1;
+    --sky-mid:#e3d5f7;
+    --sky-low:#c6e6f8;
+    --surface:#aad4f0;
+    --shallow:#8fc2e8;
+    --mid:#6a8acc;
+    --deep:#3d3d8c;
+    --abyss:#1a1040;
+
+    --opal:#f5e9ff;
+    --pearl:#fff4f9;
+    --pink:#ff9ecb;
+    --rose:#ffb8d9;
+    --lavender:#c3a8ff;
+    --violet:#9966dd;
+    --mint:#aaf0d6;
+    --seafoam:#b8f0e0;
+    --teal:#7dd8c9;
+    --sky:#b5e6ff;
+    --periwinkle:#a8b5ff;
+    --gold:#ffe4a8;
+    --peach:#ffcab8;
+    --magenta:#e06ab8;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Quicksand',system-ui,sans-serif;
+    color:var(--pearl);
+    background:#1a1040;
+    overflow-x:hidden;
+    line-height:1.65;
+    font-weight:400;
+  }
+
+  /* ============ FIXED SCENE ============ */
+  .scene{
+    position:fixed;inset:0;z-index:0;overflow:hidden;
+    /* Promote to its own GPU layer so blur/filter changes don't repaint the page */
+    transform:translateZ(0);
+    will-change:filter;
+    contain:strict;
+  }
+
+  .sky{
+    position:absolute;inset:0;
+    background:linear-gradient(180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 15%,
+      var(--sky-low) 30%,
+      var(--surface) 45%,
+      var(--shallow) 60%,
+      var(--mid) 75%,
+      var(--deep) 90%,
+      var(--abyss) 100%);
+    background-size:100% 900%;
+    background-position:0 0;
+  }
+
+  /* Iridescent shimmer overlay — static. The previous version animated a
+     hue-rotate filter on a full-screen element every frame, which was one of
+     the most expensive things on the page. */
+  .iridescent{
+    position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(255,158,203,.22), transparent 45%),
+      radial-gradient(ellipse at 80% 20%, rgba(195,168,255,.25), transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(125,216,201,.22), transparent 50%),
+      radial-gradient(ellipse at 10% 75%, rgba(255,228,168,.18), transparent 50%);
+  }
+
+  /* Mandala — single layer, NO mix-blend-mode (mix-blend-mode was forcing
+     the compositor to re-blend the entire scene behind it every frame).
+     Smaller, less-blurred, cheaper. */
+  .mandala{
+    position:absolute;top:50%;left:50%;
+    width:100vmax;height:100vmax;
+    margin-left:-50vmax;margin-top:-50vmax;
+    pointer-events:none;
+    background:
+      conic-gradient(from 0deg,
+        #ff9ecb, #ffc5e4, #c3a8ff, #a8b5ff, #b5e6ff,
+        #7dd8c9, #aaf0d6, #ffe4a8, #ffcab8, #ff9ecb);
+    border-radius:50%;
+    opacity:.18;
+    animation:spin 140s linear infinite;
+    filter:blur(14px);
+    will-change:transform;
+    transform:translateZ(0);
+  }
+  /* Second mandala removed entirely — it was a second full-screen layer
+     doing its own blur and rotation. */
+  @keyframes spin{
+    from{transform:rotate(0deg)}
+    to{transform:rotate(360deg)}
+  }
+
+  /* Sacred geometry orb inside the sun — static, no blink animation */
+  .third-eye{
+    position:absolute;inset:0;border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 55%, #1a1040 0%, #1a1040 8%, transparent 10%),
+      radial-gradient(circle at 50% 55%, transparent 10%, #9966dd 12%, transparent 14%),
+      radial-gradient(circle at 50% 50%, #fff 0%, transparent 25%);
+    opacity:.6;
+  }
+
+  /* Chromatic aberration for trippy headings */
+  .chromatic{
+    position:relative;display:inline-block;
+    animation:chromaShift 3s ease-in-out infinite alternate;
+  }
+  @keyframes chromaShift{
+    0%{text-shadow:
+      -2px 0 #ff3b8a, 2px 0 #3be0ff,
+      -4px 0 rgba(255,59,138,.4), 4px 0 rgba(59,224,255,.4)}
+    50%{text-shadow:
+      1px 0 #ff3b8a, -1px 0 #3be0ff,
+      3px 0 rgba(255,59,138,.3), -3px 0 rgba(59,224,255,.3)}
+    100%{text-shadow:
+      -3px 0 #ff3b8a, 3px 0 #3be0ff,
+      -6px 0 rgba(255,59,138,.4), 6px 0 rgba(59,224,255,.4)}
+  }
+
+  /* Rainbow trail — now a static conic glow, no blur, no animation.
+     The spinning-blurred version was repainting 8 blurred conic gradients
+     every frame which was a significant paint cost. */
+  .rainbow-jelly::before{
+    content:'';position:absolute;
+    top:-12%;left:-12%;right:-12%;bottom:-12%;
+    border-radius:50%;
+    background:conic-gradient(from 0deg,
+      #ff3b8a,#ffb85e,#fff05e,#5eff9e,#5edaff,#b55eff,#ff3b8a);
+    opacity:.22;z-index:-1;
+  }
+
+  /* Liquid warp filter target */
+  .warp{filter:url(#warpFilter)}
+
+  /* Emoji-based trippy drifters — no continuous CSS animations.
+     They still drift with scroll (the JS loop moves them), and each one has
+     a random static rotation applied so they feel varied without spinning. */
+  .emoji-drift{
+    position:absolute;pointer-events:none;will-change:transform;
+    font-size:2.2rem;
+    opacity:.85;
+  }
+  .emoji-drift.huge{font-size:4.5rem}
+  .emoji-drift.big{font-size:3rem}
+  .emoji-drift.small{font-size:1.4rem}
+  .emoji-drift .inner{display:inline-block}
+
+  /* Wavy rainbow section divider */
+  .rainbow-wave{
+    height:6px;border-radius:100px;margin:1.5rem auto;
+    width:200px;
+    background:linear-gradient(90deg,
+      #ff3b8a,#ff9e5e,#fff05e,#5eff9e,#5edaff,#b55eff,#ff3b8a);
+    background-size:300% 100%;
+    animation:flowBg 4s linear infinite;
+    box-shadow:0 0 20px rgba(255,100,200,.4);
+  }
+  @keyframes flowBg{
+    0%{background-position:0% 50%}
+    100%{background-position:300% 50%}
+  }
+
+  /* Sun — soft glowing orb */
+  .sun{
+    position:absolute;top:12%;right:18%;
+    width:160px;height:160px;border-radius:50%;
+    background:radial-gradient(circle,#fff 0%,#ffd9ee 35%,#c3a8ff 65%,transparent 80%);
+    box-shadow:0 0 140px 50px rgba(255,200,230,.5);
+    transition:opacity .4s,transform .4s;
+  }
+
+  /* Soft clouds */
+  .cloud{
+    position:absolute;border-radius:100px;
+    background:radial-gradient(ellipse at 30% 40%, rgba(255,255,255,.95), rgba(255,244,249,.6) 60%, transparent 80%);
+    filter:blur(3px);
+  }
+
+  /* horizon line */
+  .horizon-band{
+    position:absolute;left:0;right:0;height:4px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+    opacity:0;
+  }
+
+  /* Caustics — no more mix-blend-mode (forced recompositing) and no more
+     full-screen transform animation. Just a static soft overlay. */
+  .caustics{
+    position:absolute;inset:0;opacity:0;
+    background:
+      radial-gradient(ellipse 400px 60px at 20% 30%, rgba(255,255,255,.2), transparent 70%),
+      radial-gradient(ellipse 300px 40px at 60% 45%, rgba(255,255,255,.15), transparent 70%),
+      radial-gradient(ellipse 500px 80px at 80% 20%, rgba(255,255,255,.17), transparent 70%);
+  }
+
+  /* Godrays */
+  .godrays{
+    position:absolute;inset:0;opacity:0;mix-blend-mode:screen;
+    background:
+      linear-gradient(180deg, rgba(255,220,240,.12), transparent 60%),
+      repeating-linear-gradient(100deg,
+        transparent 0, transparent 90px,
+        rgba(255,240,250,.08) 90px, rgba(255,240,250,.08) 140px,
+        transparent 140px, transparent 250px,
+        rgba(255,230,245,.05) 250px, rgba(255,230,245,.05) 300px);
+  }
+
+  /* Drifting jellies go here */
+  .drift-layer{position:absolute;inset:0;pointer-events:none}
+
+  /* ============ JELLYFISH (CSS) ============ */
+  .jelly{
+    position:absolute;
+    will-change:transform;
+    /* drop-shadow filter removed — it was re-rendering on every transform */
+  }
+
+  .jelly .bell{
+    width:var(--size,80px);
+    height:calc(var(--size,80px) * 0.7);
+    border-radius:50% 50% 45% 45% / 65% 65% 40% 40%;
+    background:
+      radial-gradient(ellipse at 30% 25%, rgba(255,255,255,.85), transparent 50%),
+      radial-gradient(ellipse at 50% 60%, var(--j2,#c3a8ff) 40%, var(--j1,#ff9ecb) 80%);
+    position:relative;
+    box-shadow:
+      inset 0 -10px 20px rgba(255,255,255,.3),
+      inset 0 10px 15px rgba(255,255,255,.6),
+      0 0 30px var(--glow,rgba(195,168,255,.5));
+    /* pulse animation removed — no more per-frame scaling on every jelly */
+  }
+  .jelly .bell::after{
+    content:'';position:absolute;top:10%;left:15%;right:15%;
+    height:30%;border-radius:50%;
+    background:radial-gradient(ellipse,rgba(255,255,255,.65),transparent 70%);
+  }
+
+  /* Tentacles = static little yarn strands (no sway animation anymore) */
+  .jelly .tentacles{
+    position:absolute;top:calc(var(--size,80px) * 0.55);left:50%;
+    transform:translateX(-50%);
+    width:calc(var(--size,80px) * 0.9);
+    height:calc(var(--size,80px) * 1.5);
+    display:flex;justify-content:space-around;
+    pointer-events:none;
+  }
+  .jelly .tentacle{
+    width:2px;
+    background:linear-gradient(180deg, var(--j1,#ff9ecb), var(--j2,#c3a8ff), transparent 95%);
+    border-radius:100px;
+    opacity:.85;
+  }
+
+  /* Sparkles — now static. Drift via scroll like everyone else; no
+     continuous twinkle animation on 45 of them simultaneously. */
+  .sparkle-wrap{
+    position:absolute;pointer-events:none;will-change:transform;
+  }
+  .sparkle{
+    display:inline-block;color:#fff9e0;pointer-events:none;
+    text-shadow:0 0 8px #ffe4a8;
+  }
+
+  /* Bubbles — slimmer count, simpler rise. Use only transform+opacity, no
+     border (border re-rasterizes during scale). */
+  .bubble{
+    position:absolute;bottom:-40px;
+    width:12px;height:12px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), rgba(195,168,255,.3) 55%, transparent 80%);
+    animation:riseBubble linear infinite;
+    opacity:.7;
+    will-change:transform,opacity;
+  }
+  @keyframes riseBubble{
+    0%{transform:translate3d(0,0,0);opacity:0}
+    15%{opacity:.7}
+    100%{transform:translate3d(var(--drift,20px),-110vh,0);opacity:0}
+  }
+
+  /* Deep glow — soft magical veil */
+  .deep-glow{
+    position:absolute;inset:0;opacity:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse at 30% 70%, rgba(224,106,184,.35), transparent 50%),
+      radial-gradient(ellipse at 70% 40%, rgba(125,216,201,.3), transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(195,168,255,.35), transparent 55%);
+  }
+
+  /* ============ NAV ============ */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    padding:1.2rem 2.5rem;
+    display:flex;justify-content:space-between;align-items:center;
+    background:rgba(26,16,64,0);
+    transition:background .6s,border-color .6s;
+    border-bottom:1px solid transparent;
+  }
+  nav.scrolled{
+    background:rgba(26,16,64,.5);
+    border-bottom-color:rgba(195,168,255,.2);
+  }
+  /* Logo — jelly mark + animated gradient wordmark */
+  .logo{
+    display:inline-flex;align-items:center;gap:.7rem;
+    text-decoration:none;
+    color:inherit;
+  }
+  .logo .logo-img{
+    height:42px;width:auto;display:block;flex:none;
+    filter:drop-shadow(0 2px 10px rgba(195,168,255,.45));
+    transform-origin:50% 35%;
+  }
+  nav .logo .logo-img{
+    animation:jellyFloat 6s ease-in-out infinite;
+  }
+  .logo .logo-word{
+    font-family:'Caprasimo',serif;
+    font-size:1.55rem;
+    letter-spacing:.5px;
+    /* Wide multi-stop gradient that we slide horizontally for the
+       flowing color-shift effect. */
+    background:linear-gradient(90deg,
+      #ffb8d9, #e06ab8, #c3a8ff, #a8b5ff, #7dd8c9,
+      #aaf0d6, #5aaaf0, #c3a8ff, #ffb8d9);
+    background-size:400% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;
+    animation:flowGradient 9s linear infinite, wordDrift 6s ease-in-out infinite;
+    display:inline-block;
+  }
+  @keyframes jellyFloat{
+    0%,100%{transform:translateY(0) rotate(-2deg)}
+    50%{transform:translateY(-4px) rotate(2deg)}
+  }
+  @keyframes flowGradient{
+    0%{background-position:0% 50%}
+    100%{background-position:400% 50%}
+  }
+  @keyframes wordDrift{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-2px)}
+  }
+  /* Big hero logo */
+  .hero-logo{
+    display:block;margin:0 auto 1.5rem;
+    width:min(620px,86vw);height:auto;
+    filter:drop-shadow(0 8px 32px rgba(255,158,203,.35)) drop-shadow(0 2px 12px rgba(195,168,255,.3));
+  }
+  .nav-links{display:flex;gap:1.8rem;list-style:none;align-items:center}
+  .nav-links a{color:var(--pearl);text-decoration:none;font-weight:500;font-size:.9rem;transition:color .3s}
+  .nav-links a:hover{color:var(--pink)}
+  .adopt-btn{
+    padding:.55rem 1.3rem;border-radius:100px;
+    background:linear-gradient(135deg,var(--pink),var(--lavender));
+    color:white !important;font-weight:600;
+    box-shadow:0 8px 24px rgba(255,158,203,.4);
+    transition:transform .3s;
+  }
+  .adopt-btn:hover{transform:translateY(-2px)}
+
+  /* ============ HERO ============ */
+  .hero{
+    min-height:100vh;
+    display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
+    text-align:center;padding:7rem 2rem 4rem;position:relative;
+    color:#4a2b5e;
+  }
+  .kicker{
+    display:inline-flex;align-items:center;gap:.5rem;
+    padding:.5rem 1.2rem;border-radius:100px;
+    background:rgba(255,255,255,.55);
+    border:1px solid rgba(255,255,255,.8);
+    color:#6a3a8a;font-size:.85rem;font-weight:500;
+    margin-bottom:2rem;
+    backdrop-filter:blur(10px);
+  }
+  .kicker .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--pink);
+    box-shadow:0 0 12px var(--pink);
+    animation:pulseDot 2s ease-in-out infinite;
+  }
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+  .hero h1{
+    font-family:'Fraunces',serif;
+    font-weight:400;
+    font-size:clamp(3rem,9vw,8rem);
+    line-height:.95;letter-spacing:-.03em;
+    margin-bottom:1.5rem;
+    max-width:1100px;
+    color:#3a1f5e;
+  }
+  .hero h1 .italic{
+    font-style:italic;
+    background:linear-gradient(135deg,var(--pink),var(--violet) 60%,var(--teal));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero h1 .smack{
+    font-family:'Caprasimo',serif;
+    background:linear-gradient(135deg,#e06ab8,#9966dd 50%,#7dd8c9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p.lead{
+    font-size:1.2rem;max-width:640px;color:#5a3a7a;
+    margin-bottom:2.5rem;
+  }
+  .hero .made-by{
+    font-family:'Caprasimo',serif;
+    color:#7a4a9a;font-size:1rem;
+    margin-top:1rem;letter-spacing:.5px;
+  }
+  .scroll-prompt{
+    position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);
+    color:#6a3a8a;font-size:.85rem;letter-spacing:3px;text-transform:uppercase;
+    display:flex;flex-direction:column;align-items:center;gap:.8rem;
+  }
+  .scroll-prompt .arrow{
+    width:2px;height:40px;background:linear-gradient(180deg,#6a3a8a,transparent);
+    animation:scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse{
+    0%{transform:scaleY(.3);transform-origin:top}
+    50%{transform:scaleY(1);transform-origin:top}
+    51%{transform:scaleY(1);transform-origin:bottom}
+    100%{transform:scaleY(.3);transform-origin:bottom}
+  }
+
+  /* ============ CHAPTERS ============ */
+  .chapter{
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:6rem 2rem;position:relative;
+    /* Let the browser skip rendering off-screen chapter content entirely */
+    content-visibility:auto;
+    contain-intrinsic-size:100vh;
+  }
+  .philosophy, .collection, .gift, .anna, footer{
+    content-visibility:auto;
+    contain-intrinsic-size:100vh;
+  }
+  .chapter-card{
+    max-width:620px;
+    padding:2.8rem 2.5rem;
+    border-radius:32px;
+    /* Higher-opacity background removes the need for an expensive backdrop blur */
+    background:rgba(26,16,64,.72);
+    border:1px solid rgba(195,168,255,.3);
+    box-shadow:0 30px 80px rgba(20,10,60,.35);
+    position:relative;overflow:hidden;
+    transform:translateY(60px);opacity:0;
+    transition:transform 1.1s cubic-bezier(.2,.9,.3,1),opacity 1s;
+  }
+  .chapter-card::before{
+    content:'';position:absolute;inset:-2px;border-radius:32px;
+    background:linear-gradient(135deg,var(--pink),var(--lavender),var(--teal),var(--gold));
+    background-size:300% 300%;
+    opacity:.4;z-index:-1;
+    animation:flowGradient 8s ease-in-out infinite alternate;
+  }
+  .chapter-card.visible{transform:translateY(0);opacity:1}
+  .chapter.right .chapter-card{margin-left:auto;margin-right:4%}
+  .chapter.left .chapter-card{margin-right:auto;margin-left:4%}
+  .chapter-card .depth{
+    font-family:'Caprasimo',serif;
+    font-size:3rem;line-height:1;
+    background:linear-gradient(135deg,var(--pink),var(--lavender),var(--teal));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-bottom:.2rem;
+  }
+  .chapter-card .label{
+    font-size:.75rem;text-transform:uppercase;letter-spacing:3px;
+    color:var(--pink);font-weight:600;margin-bottom:1.5rem;
+  }
+  .chapter-card h2{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.1;
+    letter-spacing:-.02em;margin-bottom:1.2rem;
+  }
+  .chapter-card h2 em{
+    font-family:'Caprasimo',serif;font-style:normal;
+    background:linear-gradient(135deg,var(--pink),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .chapter-card p{
+    color:rgba(245,244,255,.88);font-size:1.05rem;margin-bottom:.8rem;
+  }
+  .chapter-card .sig{
+    display:inline-block;margin-top:.8rem;
+    font-family:'Caprasimo',serif;font-size:1.2rem;
+    background:linear-gradient(135deg,var(--teal),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* ============ PHILOSOPHY: GIVE / CARE / SHARE ============ */
+  .philosophy{
+    padding:8rem 2rem;position:relative;z-index:5;
+  }
+  /* Soft dark veil so text is readable against the iridescent scene */
+  .philosophy::before{
+    content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%,
+      rgba(26,16,64,.55) 0%,
+      rgba(26,16,64,.35) 40%,
+      rgba(26,16,64,.15) 70%,
+      transparent 100%);
+  }
+  .phil-head{text-align:center;max-width:800px;margin:0 auto 4rem;position:relative}
+  .phil-head .eyebrow{
+    font-size:.8rem;text-transform:uppercase;letter-spacing:4px;
+    color:#ffd0e4;font-weight:700;margin-bottom:1rem;
+    text-shadow:0 2px 12px rgba(26,16,64,.8);
+  }
+  .phil-head h2{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(2.2rem,5vw,4rem);
+    line-height:1.05;letter-spacing:-.02em;
+    color:#fff4f9;
+    text-shadow:0 2px 20px rgba(26,16,64,.75), 0 1px 4px rgba(26,16,64,.6);
+  }
+  .phil-head h2 em{
+    font-family:'Caprasimo',serif;font-style:normal;
+    background:linear-gradient(135deg,#ff9ecb,#c3a8ff,#7dd8c9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 8px rgba(26,16,64,.5));
+  }
+  .phil-head p{
+    margin-top:1.2rem;color:#f5e9ff;font-size:1.1rem;
+    text-shadow:0 1px 10px rgba(26,16,64,.7);
+  }
+
+  .phil-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;
+    max-width:1100px;margin:0 auto;
+  }
+  .phil-card{
+    padding:2.5rem 2rem;border-radius:32px;text-align:center;
+    background:rgba(26,16,64,.55);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(195,168,255,.35);
+    box-shadow:0 12px 40px rgba(26,16,64,.4);
+    position:relative;overflow:hidden;
+    transition:transform .4s,border-color .4s,background .4s;
+  }
+  .phil-card:hover{transform:translateY(-8px);border-color:rgba(255,158,203,.55)}
+  .phil-card::before{
+    content:'';position:absolute;inset:0;opacity:.22;pointer-events:none;
+  }
+  .phil-card:nth-child(1)::before{background:radial-gradient(circle at 50% 0%,var(--pink),transparent 70%)}
+  .phil-card:nth-child(2)::before{background:radial-gradient(circle at 50% 0%,var(--lavender),transparent 70%)}
+  .phil-card:nth-child(3)::before{background:radial-gradient(circle at 50% 0%,var(--teal),transparent 70%)}
+
+  .phil-icon{
+    width:80px;height:80px;margin:0 auto 1.5rem;
+    display:flex;align-items:center;justify-content:center;
+    font-size:3rem;position:relative;
+    filter:drop-shadow(0 4px 16px rgba(0,0,0,.35));
+  }
+  .phil-card h3{
+    font-family:'Caprasimo',serif;
+    font-size:2.2rem;margin-bottom:.8rem;
+    background:linear-gradient(135deg,#ffb8d9,#c3a8ff,#7dd8c9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 6px rgba(26,16,64,.5));
+  }
+  .phil-card p{color:#f5e9ff;font-size:.98rem;line-height:1.6}
+
+  /* ============ COLLECTION (deep) ============ */
+  .collection{
+    padding:10rem 2rem 6rem;position:relative;
+  }
+  .coll-head{text-align:center;max-width:800px;margin:0 auto 4rem;position:relative}
+  .coll-head .eyebrow{
+    font-size:.8rem;text-transform:uppercase;letter-spacing:4px;
+    color:var(--gold);font-weight:600;margin-bottom:1rem;
+  }
+  .coll-head h2{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:clamp(2.2rem,5vw,4rem);
+    line-height:1.05;letter-spacing:-.02em;
+  }
+  .coll-head h2 em{
+    font-family:'Caprasimo',serif;font-style:normal;
+    background:linear-gradient(135deg,var(--gold),var(--pink),var(--lavender));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .coll-head p{margin-top:1.2rem;color:rgba(245,244,255,.8);font-size:1.1rem}
+
+  .jellies-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:1.5rem;max-width:1300px;margin:0 auto;
+  }
+  .coll-card{
+    position:relative;border-radius:28px;padding:2rem 1.5rem 1.5rem;
+    background:rgba(26,16,64,.5);
+    border:1px solid rgba(195,168,255,.25);
+    transition:transform .4s,border-color .4s;
+    overflow:hidden;
+  }
+  .coll-card:hover{transform:translateY(-8px);border-color:var(--pink)}
+  .coll-showcase{
+    aspect-ratio:1;border-radius:22px;margin-bottom:1.2rem;
+    display:flex;align-items:flex-start;justify-content:center;
+    position:relative;overflow:hidden;padding-top:15%;
+  }
+  .coll-showcase.v1{background:linear-gradient(135deg,#ffc5e4,#c3a8ff 70%)}
+  .coll-showcase.v2{background:linear-gradient(135deg,#aaf0d6,#7dd8c9 70%)}
+  .coll-showcase.v3{background:linear-gradient(135deg,#ffe4a8,#ffcab8 60%,#ff9ecb)}
+  .coll-showcase.v4{background:linear-gradient(135deg,#a8b5ff,#9966dd 70%)}
+  .coll-showcase.v5{background:linear-gradient(135deg,#fff4f9,#ffc5e4 50%,#c3a8ff)}
+  .coll-showcase.v6{background:linear-gradient(135deg,#b5e6ff,#aaf0d6 60%,#ffe4a8)}
+  .coll-showcase::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.6),transparent 55%);
+  }
+  .tag{
+    position:absolute;top:1.2rem;left:1.2rem;z-index:2;
+    padding:.3rem .7rem;border-radius:100px;font-size:.7rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;
+    background:rgba(26,16,64,.75);backdrop-filter:blur(8px);
+    border:1px solid rgba(195,168,255,.35);color:var(--pink);
+  }
+  .coll-card h4{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:500;margin-bottom:.3rem}
+  .coll-card .desc{color:rgba(245,244,255,.7);font-size:.92rem;margin-bottom:1rem}
+  .coll-foot{display:flex;justify-content:space-between;align-items:center}
+  .price{
+    font-family:'Fraunces',serif;font-size:1.3rem;
+    background:linear-gradient(135deg,var(--pink),var(--teal));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .use{font-size:.75rem;color:var(--lavender);font-weight:500;text-transform:uppercase;letter-spacing:1px}
+
+  /* ============ GIFT FLOW ============ */
+  .gift{
+    padding:8rem 2rem;position:relative;z-index:5;
+  }
+  .gift-inner{
+    max-width:1000px;margin:0 auto;
+    padding:3rem;border-radius:40px;text-align:center;
+    background:
+      radial-gradient(circle at 85% 20%, rgba(255,158,203,.3), transparent 50%),
+      radial-gradient(circle at 20% 80%, rgba(125,216,201,.3), transparent 55%),
+      linear-gradient(135deg,rgba(40,20,80,.75),rgba(60,40,120,.65));
+    border:1px solid rgba(195,168,255,.3);
+    position:relative;overflow:hidden;
+  }
+  .gift-inner::before{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(circle 3px at 10% 20%, var(--gold), transparent),
+      radial-gradient(circle 2px at 30% 60%, var(--pink), transparent),
+      radial-gradient(circle 3px at 60% 30%, var(--teal), transparent),
+      radial-gradient(circle 2px at 80% 70%, var(--lavender), transparent),
+      radial-gradient(circle 3px at 50% 85%, var(--peach), transparent),
+      radial-gradient(circle 2px at 75% 15%, var(--mint), transparent);
+    animation:twinkleBg 4s ease-in-out infinite;
+  }
+  @keyframes twinkleBg{0%,100%{opacity:.4}50%{opacity:1}}
+  .gift-inner h3{
+    font-family:'Fraunces',serif;font-weight:400;font-size:clamp(2rem,4.5vw,3.5rem);
+    line-height:1.1;margin-bottom:1rem;position:relative;
+  }
+  .gift-inner h3 em{
+    font-family:'Caprasimo',serif;font-style:normal;
+    background:linear-gradient(135deg,var(--gold),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .gift-inner p{max-width:620px;margin:0 auto 2rem;color:rgba(245,244,255,.85);position:relative}
+  .gift-steps{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:1.2rem;margin-top:2.5rem;position:relative;
+  }
+  .gift-step{
+    padding:1.5rem;border-radius:22px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(195,168,255,.2);
+  }
+  .gift-step .num{
+    font-family:'Caprasimo',serif;font-size:2.5rem;line-height:1;margin-bottom:.4rem;
+  }
+  .gift-step:nth-child(1) .num{background:linear-gradient(135deg,var(--pink),var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gift-step:nth-child(2) .num{background:linear-gradient(135deg,var(--lavender),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gift-step:nth-child(3) .num{background:linear-gradient(135deg,var(--teal),var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gift-step:nth-child(4) .num{background:linear-gradient(135deg,var(--gold),var(--peach));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gift-step h4{font-family:'Fraunces',serif;font-size:1.15rem;margin-bottom:.4rem}
+  .gift-step p{color:rgba(245,244,255,.75);font-size:.9rem;margin:0}
+
+  /* ============ ANNA ============ */
+  .anna{
+    padding:8rem 2rem;position:relative;z-index:5;
+  }
+  .anna-grid{
+    display:grid;grid-template-columns:1fr 1.2fr;gap:5rem;align-items:center;
+    max-width:1200px;margin:0 auto;
+  }
+  .anna-portrait{
+    aspect-ratio:1;border-radius:40px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(circle at 30% 30%,var(--gold),transparent 40%),
+      radial-gradient(circle at 70% 20%,var(--pink),transparent 45%),
+      radial-gradient(circle at 80% 80%,var(--lavender),transparent 50%),
+      radial-gradient(circle at 20% 80%,var(--teal),transparent 50%),
+      linear-gradient(135deg,var(--deep),var(--abyss));
+    box-shadow:0 30px 80px rgba(0,0,0,.35);
+  }
+  .anna h3{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:2.6rem;line-height:1.1;margin-bottom:1.5rem;letter-spacing:-.02em;
+  }
+  .anna h3 em{
+    font-family:'Caprasimo',serif;font-style:normal;
+    background:linear-gradient(135deg,var(--pink),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .anna .eyebrow{
+    font-size:.8rem;text-transform:uppercase;letter-spacing:4px;
+    color:var(--teal);font-weight:600;margin-bottom:1rem;
+  }
+  .anna p{color:rgba(245,244,255,.85);margin-bottom:1.2rem;font-size:1.05rem}
+  .anna .sig{
+    display:inline-block;margin-top:1rem;
+    font-family:'Caprasimo',serif;font-size:1.6rem;
+    background:linear-gradient(135deg,var(--pink),var(--lavender));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* ============ NEWSLETTER + FOOTER ============ */
+  .newsletter{
+    max-width:900px;margin:3rem auto 0;padding:4rem 2rem;border-radius:40px;text-align:center;
+    background:
+      radial-gradient(circle at 25% 40%, rgba(255,158,203,.3), transparent 50%),
+      radial-gradient(circle at 75% 60%, rgba(125,216,201,.3), transparent 55%),
+      linear-gradient(135deg,rgba(26,16,64,.9),rgba(60,40,120,.7));
+    border:1px solid rgba(195,168,255,.25);
+  }
+  .newsletter h3{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.8rem,4vw,3rem);margin-bottom:.8rem}
+  .newsletter h3 em{font-family:'Caprasimo',serif;font-style:normal;color:var(--pink)}
+  .newsletter p{max-width:500px;margin:0 auto 2rem;color:rgba(245,244,255,.8)}
+  .nl-form{
+    display:flex;gap:.5rem;max-width:500px;margin:0 auto;
+    padding:.4rem;border-radius:100px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(195,168,255,.3);
+    backdrop-filter:blur(10px);
+  }
+  .nl-form input{flex:1;background:transparent;border:none;outline:none;padding:.8rem 1rem;color:var(--pearl);font-family:inherit;font-size:.95rem}
+  .nl-form input::placeholder{color:rgba(245,244,255,.55)}
+  .nl-form button{
+    padding:.8rem 1.6rem;border-radius:100px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--pink),var(--lavender));
+    color:white;font-weight:600;font-family:inherit;
+  }
+
+  footer{
+    padding:5rem 2rem 2rem;margin-top:4rem;
+    background:rgba(20,10,50,.9);
+    border-top:1px solid rgba(195,168,255,.2);
+    position:relative;z-index:5;
+  }
+  .foot-grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem}
+  .foot-brand p{color:rgba(245,244,255,.7);margin-top:1rem;max-width:340px;font-size:.92rem}
+  .foot-col h5{font-family:'Fraunces',serif;font-size:1rem;color:var(--pink);margin-bottom:1rem}
+  .foot-col ul{list-style:none}
+  .foot-col li{margin-bottom:.6rem}
+  .foot-col a{color:rgba(245,244,255,.7);text-decoration:none;font-size:.9rem;transition:color .3s}
+  .foot-col a:hover{color:var(--pink)}
+  .foot-bottom{
+    max-width:1280px;margin:3rem auto 0;padding-top:2rem;
+    border-top:1px solid rgba(195,168,255,.15);
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
+    color:rgba(245,244,255,.5);font-size:.85rem;
+  }
+  .socials{display:flex;gap:.8rem}
+  .socials a{
+    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.08);transition:all .3s;color:var(--pearl);text-decoration:none;
+  }
+  .socials a:hover{background:linear-gradient(135deg,var(--pink),var(--lavender));transform:translateY(-3px)}
+
+  /* Depth meter */
+  .depth-meter{
+    position:fixed;left:1.5rem;top:50%;transform:translateY(-50%);z-index:150;
+    display:flex;flex-direction:column;align-items:center;gap:.5rem;
+    pointer-events:none;mix-blend-mode:difference;
+  }
+  .depth-track{width:2px;height:220px;background:rgba(255,255,255,.2);border-radius:100px;position:relative}
+  .depth-fill{
+    position:absolute;top:0;left:0;right:0;
+    background:linear-gradient(180deg,var(--pink),var(--lavender),var(--teal),var(--gold));
+    border-radius:100px;
+  }
+  .depth-val{font-family:'Caprasimo',serif;color:rgba(255,255,255,.9);font-size:.9rem}
+
+  @media (max-width:860px){
+    nav{padding:1rem 1.2rem}
+    .nav-links a:not(.adopt-btn){display:none}
+    .chapter.right .chapter-card,.chapter.left .chapter-card{margin:0 auto}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:2rem}
+    .phil-grid{grid-template-columns:1fr}
+    .anna-grid{grid-template-columns:1fr;gap:3rem}
+    .depth-meter{left:.8rem}
+    .sun{width:110px;height:110px;right:10%}
+  }
+</style>
+</head>
+<body>
+
+<!-- SVG defs: filters + reusable logo symbol -->
+<svg style="position:fixed;width:0;height:0;pointer-events:none" aria-hidden="true">
+  <defs>
+    <filter id="warpFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.02" numOctaves="2" seed="3">
+        <animate attributeName="baseFrequency" dur="25s"
+          values="0.008 0.02;0.015 0.01;0.008 0.02" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="16" />
+    </filter>
+    <filter id="gooFilter">
+      <feGaussianBlur stdDeviation="6" />
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" />
+    </filter>
+    <!-- Smack Magick jellyfish logo mark -->
+    <linearGradient id="smackGrad" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#ffb8d9"/>
+      <stop offset="22%" stop-color="#e8d4d8"/>
+      <stop offset="48%" stop-color="#7dd8c9"/>
+      <stop offset="74%" stop-color="#5aaaf0"/>
+      <stop offset="100%" stop-color="#4170cc"/>
+    </linearGradient>
+    <symbol id="smackLogo" viewBox="0 0 1000 560">
+      <g fill="none" stroke="url(#smackGrad)" stroke-width="16"
+         stroke-linecap="round" stroke-linejoin="round">
+        <!-- Bell: the loop on the left -->
+        <path d="M 270 330 C 160 310, 150 160, 290 110 C 430 65, 560 140, 545 250 C 535 320, 460 340, 400 310 C 360 290, 340 270, 350 240"/>
+        <!-- Bell bottom ribbon continuing right -->
+        <path d="M 340 320 C 310 340, 300 380, 340 390 C 410 400, 510 370, 610 340"/>
+        <!-- Flowing tentacle waves going right -->
+        <path d="M 420 240 C 520 205, 650 180, 780 185 C 870 190, 930 210, 970 230"/>
+        <path d="M 500 275 C 610 265, 740 250, 840 260 C 905 265, 945 280, 975 295"/>
+        <path d="M 525 325 C 620 330, 740 325, 840 320 C 905 317, 945 330, 980 345"/>
+        <path d="M 495 370 C 600 380, 720 375, 820 360 C 890 348, 935 350, 975 360"/>
+        <path d="M 440 410 C 540 420, 660 420, 780 410 C 860 402, 910 405, 960 410"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- FIXED SCENE -->
+<div class="scene" id="scene">
+  <div class="mandala" id="mandala"></div>
+
+  <div class="sky" id="sky"></div>
+  <div class="iridescent"></div>
+  <div class="sun" id="sun"><div class="third-eye"></div></div>
+
+  <div class="cloud" style="width:180px;height:50px;top:10%;left:12%"></div>
+  <div class="cloud" style="width:240px;height:60px;top:20%;left:62%"></div>
+  <div class="cloud" style="width:160px;height:45px;top:8%;left:42%"></div>
+
+  <div class="horizon-band" id="horizon"></div>
+  <div class="caustics" id="caustics"></div>
+  <div class="godrays" id="godrays"></div>
+
+  <div class="drift-layer" id="drift"></div>
+
+  <div class="deep-glow" id="deepGlow"></div>
+</div>
+
+<!-- DEPTH METER -->
+<div class="depth-meter" id="depthMeter">
+  <div class="depth-val" id="depthVal">0 ft</div>
+  <div class="depth-track"><div class="depth-fill" id="depthFill" style="height:0%"></div></div>
+  <div class="depth-val">▼</div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="logo" aria-label="Smack Magick">
+    <img class="logo-img" src="jelly.png" alt="" aria-hidden="true" />
+    <span class="logo-word">Smack Magick</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#story">Story</a></li>
+    <li><a href="#philosophy">Philosophy</a></li>
+    <li><a href="#collection">Collection</a></li>
+    <li><a href="#anna">The Maker</a></li>
+    <li><a href="#collection" class="adopt-btn">Adopt a Jelly →</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- HERO: IN THE SKY -->
+  <header class="hero">
+    <div class="kicker"><span class="dot"></span>A smack is a group of jellyfish. This one is handmade, and it's for you.</div>
+    <h1>
+      A <span class="italic">soft, squishy,</span> <span class="smack chromatic">iridescent</span> smack<br>of jellyfish, for every corner of your life.
+    </h1>
+    <p class="lead">
+      Hand-knit jellies made from iridescent yarn. Hang one in your window, dangle one from your rearview mirror, swing one around in the backyard, trade one with a stranger at a festival. Keep one. Give one away. Let it get a little weird.
+    </p>
+    <div class="rainbow-wave"></div>
+    <div class="made-by">Handmade with love by Anna 🧶✨🪼</div>
+    <div class="scroll-prompt"><div>Drift deeper</div><div class="arrow"></div></div>
+  </header>
+
+  <!-- CHAPTER 1: The Surface -->
+  <section class="chapter right" data-depth="5">
+    <div class="chapter-card">
+      <div class="depth">— 5 ft</div>
+      <div class="label">At the Surface</div>
+      <h2>It started with a <em>tiny bell</em>.</h2>
+      <p>Anna was crocheting a scarf when she realized the half-finished dome in her lap looked exactly like a jellyfish bell. So she added eight wobbly tentacles. Then she gave it to her best friend.</p>
+      <p>Her friend put it in her car. Three days later, a stranger at a stoplight rolled down their window and said, "I love your jellyfish." That was it. Smack Magick was born.</p>
+    </div>
+  </section>
+
+  <!-- CHAPTER 2: Just below -->
+  <section class="chapter left" data-depth="20">
+    <div class="chapter-card">
+      <div class="depth">— 20 ft</div>
+      <div class="label">Drifting Down</div>
+      <h2>Every jelly is a little <em>permission slip</em>.</h2>
+      <p>Permission to hang something whimsical from your ceiling. To clip one to your backpack at age 34. To put a glittery tentacled creature on your dashboard when you're stuck in traffic and need a reason to smile.</p>
+      <p>The yarn is iridescent — it shifts color in the sun, glows under a lamp, catches the light when your cat bats it around.</p>
+    </div>
+  </section>
+
+  <!-- CHAPTER 3: The shimmer zone -->
+  <section class="chapter right" data-depth="70">
+    <div class="chapter-card">
+      <div class="depth">— 70 ft</div>
+      <div class="label">The Shimmer Zone</div>
+      <h2>They're built to be <em>played with</em>.</h2>
+      <p>Every Smack Magick jelly has a long hanging loop — strong enough to swing around, soft enough to nap on. The tentacles are intentionally tangly. That's the charm.</p>
+      <p>Some live in windows. Some dangle over cribs. Some are tied to bike handlebars. One is currently, as far as we know, on a fishing boat in Maine.</p>
+    </div>
+  </section>
+
+  <!-- CHAPTER 4: Give / Care / Share -->
+  <section class="chapter left" data-depth="130">
+    <div class="chapter-card">
+      <div class="depth">— 130 ft</div>
+      <div class="label">The Philosophy</div>
+      <h2>Give one. Care for it. <em>Share the next</em>.</h2>
+      <p>The heart of Smack Magick isn't the yarn — it's what happens after. Every jelly comes with a small tag inviting you to, at some point, pass it along. Or make one. Or just tell someone they made your day.</p>
+      <p>It's not a transaction. It's a tide.</p>
+      <span class="sig">— Anna 🌸</span>
+    </div>
+  </section>
+
+  <!-- PHILOSOPHY CARDS -->
+  <section id="philosophy" class="philosophy">
+    <div class="phil-head">
+      <div class="eyebrow">The three currents</div>
+      <h2>A <em>philosophy</em> in three movements.</h2>
+      <p>Smack Magick is less of a shop and more of a promise. Here's how it works.</p>
+    </div>
+    <div class="phil-grid">
+      <div class="phil-card">
+        <div class="phil-icon">🎁</div>
+        <h3>Give</h3>
+        <p>Every Smack is an excuse to show up for someone. A friend having a hard week. A kid who could use a tiny friend. Yourself, maybe.</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">💜</div>
+        <h3>Care</h3>
+        <p>Hold it gently, or swing it around — both are fine. When it gets tangled (it will), gently untangle it. That's the whole exercise.</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🌊</div>
+        <h3>Share</h3>
+        <p>When the time feels right, pass it along. Give yours to a stranger, a neighbor, a friend who needs it more. The smack always grows.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLLECTION -->
+  <section id="collection" class="collection">
+    <div class="coll-head">
+      <div class="eyebrow">The Current Smack</div>
+      <h2>Meet the <em>jellies</em>.</h2>
+      <p>Every one is hand-knit by Anna. No two are identical. Yarn colors, tentacle counts, and personalities vary wildly.</p>
+    </div>
+
+    <div class="jellies-grid">
+      <div class="coll-card">
+        <div class="tag">Bestseller</div>
+        <div class="coll-showcase v1"><div class="jelly" style="--size:110px;--j1:#ff9ecb;--j2:#c3a8ff;--glow:rgba(195,168,255,.6);--pulse:3.2s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:90%"></span><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:75%"></span></div></div></div>
+        <h4>Rosé the Romantic</h4>
+        <p class="desc">Pink-lavender iridescent blend. Seven flowing tentacles. Ships with a window hook.</p>
+        <div class="coll-foot"><div class="price">$38</div><div class="use">Window / Room</div></div>
+      </div>
+
+      <div class="coll-card">
+        <div class="tag">New</div>
+        <div class="coll-showcase v2"><div class="jelly" style="--size:110px;--j1:#aaf0d6;--j2:#7dd8c9;--glow:rgba(125,216,201,.6);--pulse:3.8s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:80%"></span><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:75%"></span></div></div></div>
+        <h4>Mossy Mist</h4>
+        <p class="desc">Seafoam mint with a pearly sheen. Eight wavy tentacles. Very calming to look at.</p>
+        <div class="coll-foot"><div class="price">$36</div><div class="use">Car / Backpack</div></div>
+      </div>
+
+      <div class="coll-card">
+        <div class="tag">Limited</div>
+        <div class="coll-showcase v3"><div class="jelly" style="--size:110px;--j1:#ffe4a8;--j2:#ff9ecb;--glow:rgba(255,211,168,.6);--pulse:2.8s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:80%"></span><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:90%"></span></div></div></div>
+        <h4>Sunset Sprite</h4>
+        <p class="desc">Golden peach with coral tentacles. Looks best in a sunny window.</p>
+        <div class="coll-foot"><div class="price">$42</div><div class="use">Window / Porch</div></div>
+      </div>
+
+      <div class="coll-card">
+        <div class="tag">Glows!</div>
+        <div class="coll-showcase v4"><div class="jelly" style="--size:110px;--j1:#a8b5ff;--j2:#9966dd;--glow:rgba(153,102,221,.7);--pulse:3.5s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:75%"></span><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:80%"></span></div></div></div>
+        <h4>Midnight Moon</h4>
+        <p class="desc">Glow-in-the-dark yarn. Periwinkle dome, violet tentacles. For a bedroom ceiling.</p>
+        <div class="coll-foot"><div class="price">$44</div><div class="use">Bedroom / Nightstand</div></div>
+      </div>
+
+      <div class="coll-card">
+        <div class="tag">Mini</div>
+        <div class="coll-showcase v5"><div class="jelly" style="--size:90px;--j1:#fff4f9;--j2:#ff9ecb;--glow:rgba(255,158,203,.55);--pulse:2.5s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:75%"></span><span class="tentacle" style="height:90%"></span><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:80%"></span></div></div></div>
+        <h4>Pebble Pearl</h4>
+        <p class="desc">Pocket-sized opal mini. Clip it to a keychain, a bag, a rearview mirror.</p>
+        <div class="coll-foot"><div class="price">$22</div><div class="use">Keychain / Mirror</div></div>
+      </div>
+
+      <div class="coll-card">
+        <div class="tag">Rainbow</div>
+        <div class="coll-showcase v6"><div class="jelly" style="--size:120px;--j1:#b5e6ff;--j2:#ffe4a8;--glow:rgba(195,168,255,.6);--pulse:4s"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:70%"></span><span class="tentacle" style="height:90%"></span><span class="tentacle" style="height:80%"></span><span class="tentacle" style="height:100%"></span></div></div></div>
+        <h4>The Big Prism</h4>
+        <p class="desc">The oversized one. Seven tentacles. Rainbow self-striping yarn. Main-character energy.</p>
+        <div class="coll-foot"><div class="price">$58</div><div class="use">Ceiling / Party</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FESTIVAL SECTION -->
+  <section id="festival" class="philosophy">
+    <div class="phil-head">
+      <div class="eyebrow">Find us in the wild</div>
+      <h2>The smack travels in <em>packs of strangers</em>.</h2>
+      <div class="rainbow-wave"></div>
+      <p>Smack Magick lives at festivals. Anna sets up a little iridescent reef, and people wander off with a jelly tied to their belt loop, their hydration pack, their friend's hair. We also gift them for free to anyone who clearly needs one.</p>
+    </div>
+
+    <div class="phil-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div class="phil-card">
+        <div class="phil-icon">🍄</div>
+        <h3 style="font-size:1.4rem">Lucidity</h3>
+        <p>Big Sur, CA · April</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🌈</div>
+        <h3 style="font-size:1.4rem">Lightning in a Bottle</h3>
+        <p>Buena Vista, CA · May</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🔮</div>
+        <h3 style="font-size:1.4rem">Symbiosis Gathering</h3>
+        <p>Nevada County, CA · June</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🪩</div>
+        <h3 style="font-size:1.4rem">Dirtybird Campout</h3>
+        <p>Bradley, CA · October</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🧿</div>
+        <h3 style="font-size:1.4rem">Desert Hearts</h3>
+        <p>Los Coyotes, CA · Spring</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">👁️</div>
+        <h3 style="font-size:1.4rem">Enchanted Forest</h3>
+        <p>Belden, CA · September</p>
+      </div>
+    </div>
+
+    <div class="phil-head" style="margin-top:6rem">
+      <div class="eyebrow">...and every Cheese run</div>
+      <h2 style="font-size:clamp(1.8rem,4vw,3rem)">Following the <em>String Cheese Incident</em>.</h2>
+      <p>Anna's been a Cheese kid since forever. Wherever the band sets up, the smack shows up. Find us in the lot, at the rail, or floating somewhere above the crowd.</p>
+    </div>
+
+    <div class="phil-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div class="phil-card">
+        <div class="phil-icon">🏔️</div>
+        <h3 style="font-size:1.4rem">Red Rocks Run</h3>
+        <p>Morrison, CO · July</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🌲</div>
+        <h3 style="font-size:1.4rem">Horning's Hideout</h3>
+        <p>North Plains, OR · July</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🎃</div>
+        <h3 style="font-size:1.4rem">Suwannee Hulaween</h3>
+        <p>Live Oak, FL · October</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🎆</div>
+        <h3 style="font-size:1.4rem">NYE Run</h3>
+        <p>Broomfield, CO · December</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🌳</div>
+        <h3 style="font-size:1.4rem">Electric Forest</h3>
+        <p>Rothbury, MI · June</p>
+      </div>
+      <div class="phil-card">
+        <div class="phil-icon">🧀</div>
+        <h3 style="font-size:1.4rem">Winter Carnival</h3>
+        <p>Various · February</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GIFT FLOW -->
+  <section class="gift">
+    <div class="gift-inner">
+      <h3>Give one, <em>pass it on</em>.</h3>
+      <p>Every order includes a little card you can tuck in with the jelly if you're giving it away. Or keep it. Or tie it to someone's doorknob at 2am. We trust you.</p>
+      <div class="gift-steps">
+        <div class="gift-step">
+          <div class="num">01</div>
+          <h4>Adopt a jelly</h4>
+          <p>Pick your smack. Each one is made to order.</p>
+        </div>
+        <div class="gift-step">
+          <div class="num">02</div>
+          <h4>Receive & name it</h4>
+          <p>Every jelly deserves a proper name. Send us a photo if you want.</p>
+        </div>
+        <div class="gift-step">
+          <div class="num">03</div>
+          <h4>Care for it</h4>
+          <p>Hang it, swing it, love it. It's handmade; a little softness helps.</p>
+        </div>
+        <div class="gift-step">
+          <div class="num">04</div>
+          <h4>Share the tide</h4>
+          <p>When it's time, pass one on. The smack keeps growing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE MAKER -->
+  <section id="anna" class="anna">
+    <div class="anna-grid">
+      <div class="anna-portrait">
+        <div class="jelly" style="--size:200px;--j1:#ff9ecb;--j2:#c3a8ff;--glow:rgba(255,158,203,.7);--pulse:4s;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)"><div class="bell"></div><div class="tentacles"><span class="tentacle" style="height:75%"></span><span class="tentacle" style="height:95%"></span><span class="tentacle" style="height:100%"></span><span class="tentacle" style="height:85%"></span><span class="tentacle" style="height:90%"></span><span class="tentacle" style="height:80%"></span><span class="tentacle" style="height:100%"></span></div></div>
+        <span class="sparkle" style="top:15%;left:15%">✦</span>
+        <span class="sparkle" style="top:25%;right:20%;animation-delay:.7s">⋆</span>
+        <span class="sparkle" style="bottom:20%;left:20%;animation-delay:1.4s">✧</span>
+        <span class="sparkle" style="bottom:15%;right:15%;animation-delay:1.8s">✦</span>
+      </div>
+      <div>
+        <div class="eyebrow">Meet the maker</div>
+        <h3>Made, one stitch at a time, by <em>Anna King</em>.</h3>
+        <p>Anna is a knitter, a collector of weird yarn, and — as of the jellyfish incident — a practicing philosopher of small whimsical gifts.</p>
+        <p>Each Smack Magick jelly is hand-knit in her studio, usually while watching ocean documentaries. She names the yarn colors as she picks them. She will never stop saying "smack" like it's a word she invented.</p>
+        <p>If you meet Anna, she'll probably give you a jelly. That's just the rule now.</p>
+        <span class="sig">— with love, Anna 🪼</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="gift">
+    <div class="newsletter">
+      <h3>Join the <em>smack</em>.</h3>
+      <p>New drops, open calls for yarn colors, and occasional jellyfish facts. About one email a moon cycle.</p>
+      <form class="nl-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='You\'re in! 🪼'">
+        <input type="email" placeholder="your@email.com" required>
+        <button type="submit">Drift in</button>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="logo">
+          <img class="logo-img" src="new%20logo%20trans.png" alt="Smack Magick" style="height:56px" />
+        </div>
+        <p>Iridescent hand-knit jellyfish, made one stitch at a time by Anna. A philosophy of giving, caring, and sharing — passed jelly by jelly.</p>
+      </div>
+      <div class="foot-col"><h5>Adopt</h5><ul><li><a href="#collection">The Collection</a></li><li><a href="#">Custom Orders</a></li><li><a href="#">Minis</a></li><li><a href="#">Gift Cards</a></li></ul></div>
+      <div class="foot-col"><h5>About</h5><ul><li><a href="#anna">Meet Anna</a></li><li><a href="#philosophy">The Philosophy</a></li><li><a href="#">The Yarn</a></li><li><a href="#">Stories from the Smack</a></li></ul></div>
+      <div class="foot-col"><h5>Help</h5><ul><li><a href="#">Shipping</a></li><li><a href="#">Care Guide</a></li><li><a href="#">Untangling Tips</a></li><li><a href="#">Contact</a></li></ul></div>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 Smack Magick · Knit with love by Anna 🧶</div>
+      <div class="socials"><a href="#">◎</a><a href="#">♪</a><a href="#">▶</a><a href="#">✉</a></div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  // ============ UTILITIES ============
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+  function lerp(a,b,t){return a+(b-a)*t}
+
+  // ============ JELLY FACTORY ============
+  const driftLayer = document.getElementById('drift');
+
+  const jellyPalettes = [
+    {j1:'#ff9ecb', j2:'#c3a8ff', glow:'rgba(195,168,255,.6)'},
+    {j1:'#aaf0d6', j2:'#7dd8c9', glow:'rgba(125,216,201,.6)'},
+    {j1:'#ffe4a8', j2:'#ffcab8', glow:'rgba(255,211,168,.6)'},
+    {j1:'#a8b5ff', j2:'#9966dd', glow:'rgba(153,102,221,.6)'},
+    {j1:'#fff4f9', j2:'#ff9ecb', glow:'rgba(255,158,203,.55)'},
+    {j1:'#b5e6ff', j2:'#aaf0d6', glow:'rgba(181,230,255,.55)'},
+    {j1:'#e06ab8', j2:'#9966dd', glow:'rgba(224,106,184,.6)'},
+    {j1:'#ffc5e4', j2:'#c3a8ff', glow:'rgba(255,197,228,.55)'},
+  ];
+
+  function makeJelly(size, palette){
+    const wrap = document.createElement('div');
+    wrap.className = 'jelly drifter';
+    wrap.style.setProperty('--size', size+'px');
+    wrap.style.setProperty('--j1', palette.j1);
+    wrap.style.setProperty('--j2', palette.j2);
+    wrap.style.setProperty('--glow', palette.glow);
+    wrap.style.setProperty('--pulse', (2.5 + Math.random()*2.5)+'s');
+    wrap.style.setProperty('--swaySpeed', (2.5 + Math.random()*2)+'s');
+
+    const bell = document.createElement('div');
+    bell.className = 'bell';
+    wrap.appendChild(bell);
+
+    const t = document.createElement('div');
+    t.className = 'tentacles';
+    // Fewer tentacles = fewer sway animations running at once
+    const count = 4 + Math.floor(Math.random()*2);
+    for(let i=0;i<count;i++){
+      const tent = document.createElement('span');
+      tent.className = 'tentacle';
+      tent.style.height = (60 + Math.random()*50)+'%';
+      t.appendChild(tent);
+    }
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  const drifters = [];
+
+  function addJelly(opts){
+    const palette = opts.palette || jellyPalettes[Math.floor(Math.random()*jellyPalettes.length)];
+    const size = opts.size || (50 + Math.random()*90);
+    const el = makeJelly(size, palette);
+    el.dataset.depth = opts.depth;
+    el.dataset.speed = opts.speed || (0.6 + Math.random()*0.8);
+    el.dataset.drift = opts.drift || ((Math.random()<.5?-1:1)*(40+Math.random()*200));
+    el.dataset.wiggle = opts.wiggle || (15+Math.random()*45);
+    el.dataset.phase = Math.random()*Math.PI*2;
+    el.style.left = (opts.x*100)+'%';
+    // Random vertical anchor so they don't all line up on a horizontal band
+    el.style.top = (5 + Math.random()*85) + '%';
+    driftLayer.appendChild(el);
+    drifters.push(el);
+  }
+
+  // Populate jellies — count cut aggressively for smoothness.
+  const JELLY_COUNT = 26;
+  for(let i=0;i<JELLY_COUNT;i++){
+    // Evenly spaced with jitter so the depth axis is covered top to bottom
+    const base = i / JELLY_COUNT;
+    const depth = clamp(base + (Math.random()-0.5)*0.08, 0.02, 0.95);
+    addJelly({ x: Math.random(), depth, size: 45 + Math.random()*90 });
+  }
+  // A handful of slow, oversized majestic ones scattered across depth
+  for(let i=0;i<4;i++){
+    const depth = clamp(0.1 + (i/6) + (Math.random()-0.5)*0.04, 0.05, 0.92);
+    addJelly({ x: Math.random(), depth, size: 140 + Math.random()*70, speed: 0.4 });
+  }
+
+  // Sparkles — now static, just drift with scroll.
+  const SPARK_COUNT = 24;
+  for(let i=0;i<SPARK_COUNT;i++){
+    const wrap = document.createElement('div');
+    wrap.className = 'sparkle-wrap drifter';
+    wrap.dataset.depth = Math.random()*0.92 + 0.04;
+    wrap.dataset.speed = 0.4 + Math.random()*1.0;
+    wrap.dataset.drift = (Math.random()<.5?-1:1)*(30+Math.random()*200);
+    wrap.dataset.wiggle = 20 + Math.random()*60;
+    wrap.dataset.phase = Math.random()*Math.PI*2;
+    wrap.style.left = (Math.random()*100)+'%';
+    wrap.style.top = (2 + Math.random()*92) + '%';
+
+    const inner = document.createElement('span');
+    inner.className = 'sparkle';
+    inner.textContent = ['✦','✧','⋆','✨','·','✵','✫','❋','✴'][Math.floor(Math.random()*9)];
+    inner.style.fontSize = (0.7 + Math.random()*1.6)+'rem';
+    inner.style.animationDelay = (Math.random()*3)+'s';
+    inner.style.animationDuration = (2 + Math.random()*2.5)+'s';
+    // Random color tint for trippy variety
+    const tints = ['#fff9e0','#ffc8e8','#c8ffe8','#c8e8ff','#e8c8ff','#fff4c8','#ffb3d9'];
+    inner.style.color = tints[Math.floor(Math.random()*tints.length)];
+    wrap.appendChild(inner);
+
+    driftLayer.appendChild(wrap);
+    drifters.push(wrap);
+  }
+
+  // 🍄 TRIPPY DRIFTERS — back, but static. No CSS spin/pulse animations,
+  // just a random baked-in rotation so each one looks unique. They still
+  // drift with scroll via the main rAF loop like the jellies.
+  const trippyBank = ['🍄','🧿','👁️','🌈','🦋','🪐','🌙','🔮','💫','☯️','🌸','🪩','🌺','🍊','✴️','🧚','🪷'];
+  const TRIPPY_COUNT = 14;
+  for(let i=0;i<TRIPPY_COUNT;i++){
+    const wrap = document.createElement('div');
+    const sizeClass = Math.random()<.15 ? 'huge' : Math.random()<.4 ? 'big' : Math.random()<.75 ? '' : 'small';
+    wrap.className = 'emoji-drift drifter ' + sizeClass;
+    // Evenly spread across scroll range
+    wrap.dataset.depth = clamp(0.04 + (i/TRIPPY_COUNT) + (Math.random()-0.5)*0.05, 0.02, 0.95);
+    wrap.dataset.speed = 0.4 + Math.random()*0.7;
+    wrap.dataset.drift = (Math.random()<.5?-1:1)*(30+Math.random()*150);
+    wrap.dataset.wiggle = 15 + Math.random()*45;
+    wrap.dataset.phase = Math.random()*Math.PI*2;
+    wrap.style.left = (Math.random()*100)+'%';
+    wrap.style.top = (5 + Math.random()*85) + '%';
+
+    const inner = document.createElement('span');
+    inner.className = 'inner';
+    inner.textContent = trippyBank[Math.floor(Math.random()*trippyBank.length)];
+    // A baked-in rotation so they feel varied without constantly spinning
+    inner.style.transform = `rotate(${Math.floor(Math.random()*360)}deg)`;
+    wrap.appendChild(inner);
+
+    driftLayer.appendChild(wrap);
+    drifters.push(wrap);
+  }
+
+  // Give a handful of jellies their own rainbow aura — really trippy
+  const rainbowJellies = drifters.filter(el => el.classList.contains('jelly'));
+  for(let i=0;i<8 && rainbowJellies.length;i++){
+    const idx = Math.floor(Math.random()*rainbowJellies.length);
+    const pick = rainbowJellies.splice(idx,1)[0];
+    const bell = pick.querySelector('.bell');
+    if(bell) bell.classList.add('rainbow-jelly');
+  }
+
+  // Bubbles — cut from 30 to 14 (each one has its own continuous CSS animation)
+  const bubbleColors = ['#ff9ecb','#c3a8ff','#7dd8c9','#ffe4a8','#a8b5ff','#b5e6ff'];
+  for(let i=0;i<14;i++){
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = 5 + Math.random()*22;
+    b.style.width = size+'px';
+    b.style.height = size+'px';
+    b.style.left = (Math.random()*100)+'%';
+    b.style.animationDuration = (10+Math.random()*18)+'s';
+    b.style.animationDelay = (Math.random()*12)+'s';
+    b.style.setProperty('--drift', (-60+Math.random()*120)+'px');
+    const c = bubbleColors[Math.floor(Math.random()*bubbleColors.length)];
+    b.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), ${c}55 55%, transparent 75%)`;
+    driftLayer.appendChild(b);
+  }
+
+  // ============ SMOOTH SCROLL LOOP ============
+  const sky = document.getElementById('sky');
+  const sun = document.getElementById('sun');
+  const caustics = document.getElementById('caustics');
+  const godrays = document.getElementById('godrays');
+  const deepGlow = document.getElementById('deepGlow');
+  const horizon = document.getElementById('horizon');
+  const nav = document.getElementById('nav');
+  const depthFill = document.getElementById('depthFill');
+  const depthVal = document.getElementById('depthVal');
+  const scene = document.getElementById('scene');
+  const mandala = document.getElementById('mandala');
+
+  // clamp() and lerp() are defined at the top of the script
+
+  // We keep a "smoothed" scroll fraction that eases toward the real one each frame.
+  // This makes every derived value (sky position, drifter y, etc.) glide smoothly
+  // even when the user scrolls with big wheel ticks or trackpad flings.
+  let smoothP = 0;
+  let targetP = 0;
+  let time = 0;
+
+  // Pre-parse drifter data into plain objects — avoids parseFloat work every frame
+  const driftData = drifters.map(el => ({
+    el,
+    d: parseFloat(el.dataset.depth),
+    speed: parseFloat(el.dataset.speed),
+    drift: parseFloat(el.dataset.drift),
+    wiggle: parseFloat(el.dataset.wiggle),
+    phase: parseFloat(el.dataset.phase || 0),
+    lastOp: -1,
+    wasHidden: false,
+  }));
+
+  // Cache the last chapter-cards list — querySelectorAll every frame is wasteful
+  const chapterCards = Array.from(document.querySelectorAll('.chapter-card'));
+  const clouds = Array.from(document.querySelectorAll('.cloud'));
+
+  // Cache values so we only write to the DOM when they meaningfully change.
+  // This is the single biggest win for smoothness on a scene full of filters.
+  let lastSkyPos = -1, lastSunOp = -1, lastFilter = '';
+  let lastCaustics = -1, lastRays = -1, lastGlow = -1, lastHorizon = -1;
+  let lastDepth = -1;
+
+  function roundTo(v,n){const f=Math.pow(10,n);return Math.round(v*f)/f}
+
+  function frame(ts){
+    time = ts/1000;
+
+    // Compute real scroll fraction
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    targetP = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+
+    // Ease smoothP toward targetP — this is what makes everything glide
+    smoothP += (targetP - smoothP) * 0.09;
+    if(Math.abs(targetP - smoothP) < 0.0002) smoothP = targetP;
+
+    const p = smoothP;
+    const vh = window.innerHeight;
+
+    // ---- Sky (only write when changed) ----
+    const skyPos = roundTo(p*100, 2);
+    if(skyPos !== lastSkyPos){
+      sky.style.backgroundPosition = `0 ${skyPos}%`;
+      lastSkyPos = skyPos;
+    }
+
+    if(window.scrollY > 80) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+
+    // ---- Sun ----
+    const sunOp = roundTo(1 - clamp((p-0.05)/0.18, 0, 1), 3);
+    if(sunOp !== lastSunOp){
+      sun.style.opacity = sunOp;
+      sun.style.transform = `translateY(${(p*80).toFixed(1)}px) scale(${(1 - p*0.3).toFixed(3)})`;
+      lastSunOp = sunOp;
+    }
+
+    // ---- Mandala rotation is driven entirely by its CSS animation now.
+    // Removed per-frame transform writes — they were blowing away the
+    // compositor-accelerated CSS animation and forcing re-layout. ----
+
+    // ---- Clouds ----
+    for(let i=0;i<clouds.length;i++){
+      const c = clouds[i];
+      c.style.transform = `translate(${(Math.sin(p*Math.PI+i)*60).toFixed(1)}px, ${(p*120).toFixed(1)}px)`;
+      c.style.opacity = 1 - clamp((p-0.05)/0.14, 0, 1);
+    }
+
+    // ---- Horizon band ----
+    const horizonActive = roundTo(clamp(1 - Math.abs(p-0.11)/0.04, 0, 1), 2);
+    if(horizonActive !== lastHorizon){
+      horizon.style.opacity = horizonActive;
+      horizon.style.top = `${(50 - (p-0.11)*400).toFixed(1)}%`;
+      lastHorizon = horizonActive;
+    }
+
+    // ---- Caustics / godrays (opacity only, no writes when unchanged) ----
+    const causticsOp = roundTo(clamp((p-0.10)/0.08, 0, 1) * (1 - clamp((p-0.45)/0.15, 0, 1)) * 0.9, 2);
+    if(causticsOp !== lastCaustics){ caustics.style.opacity = causticsOp; lastCaustics = causticsOp; }
+    const raysOp = roundTo(clamp((p-0.15)/0.10, 0, 1) * (1 - clamp((p-0.45)/0.15, 0, 1)), 2);
+    if(raysOp !== lastRays){ godrays.style.opacity = raysOp; lastRays = raysOp; }
+
+    // ---- Scene filter: NO hue-rotate (it was forcing the mandala's blur chain
+    // to re-render every frame, which was the main cause of scroll jank).
+    // We also only write when it actually changed. ----
+    const dark = clamp((p-0.35)/0.5, 0, 1);
+    const newFilter = `brightness(${lerp(1, 0.75, dark).toFixed(2)}) saturate(${lerp(1, 1.2, dark).toFixed(2)})`;
+    if(newFilter !== lastFilter){
+      scene.style.filter = newFilter;
+      lastFilter = newFilter;
+    }
+
+    // ---- Deep glow ----
+    const glowActive = roundTo(clamp((p-0.5)/0.18, 0, 1) * 0.85, 2);
+    if(glowActive !== lastGlow){ deepGlow.style.opacity = glowActive; lastGlow = glowActive; }
+
+    // ---- DRIFTERS ----
+    // Skip far-off-screen drifters entirely — they're invisible and moving
+    // them just wastes frame time. This is the other major smoothness win.
+    const sinT = Math.sin(time*0.6);
+    const cosT = Math.cos(time*0.35);
+    for(let i=0;i<driftData.length;i++){
+      const d = driftData[i];
+      const relative = d.d - p;
+      const distance = relative >= 0 ? relative : -relative;
+
+      // If it's way off-screen, hide once and skip until it comes back
+      if(distance > 0.55){
+        if(!d.wasHidden){
+          d.el.style.opacity = 0;
+          d.el.style.visibility = 'hidden';
+          d.wasHidden = true;
+          d.lastOp = 0;
+        }
+        continue;
+      }
+      if(d.wasHidden){
+        d.el.style.visibility = 'visible';
+        d.wasHidden = false;
+      }
+
+      const y = relative * vh * 3.0 * d.speed;
+      const x = sinT * d.wiggle * Math.cos(d.phase)
+              + cosT * d.wiggle * 0.55 * Math.sin(d.phase*1.7)
+              + d.drift * (p - d.d) * 0.85;
+      d.el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+
+      const op = 1 - clamp((distance-0.26)/0.20, 0, 1);
+      if(Math.abs(op - d.lastOp) > 0.02){
+        d.el.style.opacity = op;
+        d.lastOp = op;
+      }
+    }
+
+    // ---- Chapter reveals (cached list, stop once revealed) ----
+    for(let i=0;i<chapterCards.length;i++){
+      const card = chapterCards[i];
+      if(card.classList.contains('visible')) continue;
+      const r = card.getBoundingClientRect();
+      if(r.top < vh*0.85 && r.bottom > vh*0.15) card.classList.add('visible');
+    }
+
+    // ---- Depth meter (round to whole feet so text doesn't re-layout) ----
+    const depth = Math.round(p*180);
+    if(depth !== lastDepth){
+      depthVal.textContent = depth + ' ft';
+      depthFill.style.height = (p*100).toFixed(1)+'%';
+      lastDepth = depth;
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
